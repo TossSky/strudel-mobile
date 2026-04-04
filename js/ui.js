@@ -93,21 +93,36 @@
         return;
       }
 
-      const uiCps = getCps();
-      // Use actual CPS from scheduler (handles .cps()/.cpm() in code)
-      const cps = (window.Engine && window.Engine.activeCps) || uiCps;
-      const t = ctx.currentTime;
-      const cyclePos = (t * cps) % 1;
-      const totalCycles = Math.floor(t * cps);
-      const pct = (cyclePos * 100).toFixed(1);
+      // Try to read cycle phase & CPS directly from Strudel scheduler
+      var scheduler = typeof window.getScheduler === 'function' ? window.getScheduler() : null;
+      var cps, currentCycle;
+
+      if (scheduler && scheduler.origin != null && scheduler.cps) {
+        cps = scheduler.cps;
+        if (typeof scheduler.getPhase === 'function') {
+          currentCycle = scheduler.getPhase();
+        } else {
+          currentCycle = (ctx.currentTime - scheduler.origin) * scheduler.cps;
+        }
+      } else {
+        // Fallback: use playOrigin + activeCps from Engine
+        var uiCps = getCps();
+        cps = (window.Engine && window.Engine.activeCps) || uiCps;
+        var origin = (window.Engine && window.Engine.playOrigin) || 0;
+        currentCycle = (ctx.currentTime - origin) * cps;
+      }
+
+      var cyclePos = ((currentCycle % 1) + 1) % 1;
+      var totalCycles = Math.floor(currentCycle);
+      var pct = (cyclePos * 100).toFixed(1);
 
       if (barFill) barFill.style.width = pct + '%';
       if (barCursor) barCursor.style.left = 'calc(' + pct + '% - 1.5px)';
 
       // ─── Hap-based highlights (throttled to ~30fps) ───
-      if (!tick._lastHl || t - tick._lastHl > 0.033) {
-        tick._lastHl = t;
-        renderHapHighlights(t, cps);
+      if (!tick._lastHl || ctx.currentTime - tick._lastHl > 0.033) {
+        tick._lastHl = ctx.currentTime;
+        renderHapHighlights(currentCycle, cps);
       }
 
       const cc = $('cycleCounter');
@@ -123,7 +138,7 @@
    * Query the Strudel scheduler for active haps and render highlight rectangles
    * over the corresponding source code locations.
    */
-  function renderHapHighlights(now, cps) {
+  function renderHapHighlights(currentCycle, cps) {
     const container = $('hapHighlights');
     const editor = $('editor');
     if (!container || !editor) return;
@@ -144,7 +159,6 @@
       if (idx >= 0) trimOffset = idx;
     }
     const code = evalCode;
-    const currentCycle = now * cps;
     const lookBehind = 1 / 10;
     const queryEnd = currentCycle;
     const queryBegin = Math.max(0, lastQueryTime !== null ? lastQueryTime : currentCycle - lookBehind);

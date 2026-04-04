@@ -29,6 +29,8 @@
   let evaluatedCode = '';
   // Actual CPS as set by the strudel scheduler (may differ from UI input)
   let activeCps = 1;
+  // AudioContext.currentTime at the moment playback first starts
+  let playOrigin = 0;
 
   // Known dirt-samples (from github:tidalcycles/dirt-samples)
   const DIRT_SAMPLE_NAMES = [
@@ -242,6 +244,11 @@
       applyCps(cps);
     }
 
+    // Capture play origin on first eval (scheduler sets its origin here too)
+    if (!playing && audioCtx) {
+      playOrigin = audioCtx.currentTime;
+    }
+
     // Evaluate — triggers lazy sample loading and calls pattern.play()
     evaluatedCode = code;
     await window.evaluate(code);
@@ -262,6 +269,7 @@
       console.warn('[Engine] hush error:', e.message);
     }
     playing = false;
+    playOrigin = 0;
   }
 
   window.Engine = {
@@ -276,6 +284,7 @@
     get sounds() { return loadedSounds; },
     get pattern() { return currentPattern; },
     get evaluatedCode() { return evaluatedCode; },
-    get activeCps() { return activeCps; }
+    get activeCps() { return activeCps; },
+    get playOrigin() { return playOrigin; }
   };
 })();
