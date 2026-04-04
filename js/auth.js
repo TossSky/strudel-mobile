@@ -1,92 +1,96 @@
 /**
- * auth.js — Simple account system with localStorage
- * Stores users as { username, passwordHash, created }
- * Projects are scoped per user
+ * auth.js — Authentication via server API
+ * Token stored in localStorage for session persistence
  */
 (function () {
   'use strict';
 
-  const USERS_KEY = 'strudel_users';
-  const SESSION_KEY = 'strudel_current_user';
+  const TOKEN_KEY = 'strudel_token';
+  const USER_KEY = 'strudel_user';
 
-  // Simple hash (not cryptographic — just for basic password check)
-  function simpleHash(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const ch = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + ch;
-      hash |= 0;
+  function getToken() {
+    try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+  }
+
+  function getStoredUser() {
+    try {
+      var raw = localStorage.getItem(USER_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+  function saveSession(token, username) {
+    try {
+      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem(USER_KEY, JSON.stringify({ username: username }));
+    } catch {}
+  }
+
+  function clearSession() {
+    try {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    } catch {}
+  }
+
+  async function register(username, password) {
+    try {
+      var resp = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password: password })
+      });
+      var data = await resp.json();
+      if (!resp.ok) return { ok: false, error: data.error || 'Registration failed' };
+      saveSession(data.token, data.username);
+      return { ok: true, user: { username: data.username } };
+    } catch (e) {
+      return { ok: false, error: 'Network error' };
     }
-    return hash.toString(36);
   }
 
-  function getUsers() {
-    return window.Storage.get(USERS_KEY) || {};
-  }
-
-  function saveUsers(users) {
-    window.Storage.set(USERS_KEY, users);
-  }
-
-  function register(username, password) {
-    if (!username || !password) return { ok: false, error: 'Username and password required' };
-    if (username.length < 2) return { ok: false, error: 'Username too short' };
-    if (password.length < 3) return { ok: false, error: 'Password too short (min 3)' };
-
-    const users = getUsers();
-    const key = username.toLowerCase();
-    if (users[key]) return { ok: false, error: 'Username already taken' };
-
-    users[key] = {
-      username: username,
-      passwordHash: simpleHash(password),
-      created: new Date().toISOString()
-    };
-    saveUsers(users);
-    window.Storage.set(SESSION_KEY, key);
-    return { ok: true, user: users[key] };
-  }
-
-  function login(username, password) {
-    if (!username || !password) return { ok: false, error: 'Username and password required' };
-
-    const users = getUsers();
-    const key = username.toLowerCase();
-    const user = users[key];
-    if (!user) return { ok: false, error: 'User not found' };
-    if (user.passwordHash !== simpleHash(password)) return { ok: false, error: 'Wrong password' };
-
-    window.Storage.set(SESSION_KEY, key);
-    return { ok: true, user };
+  async function login(username, password) {
+    try {
+      var resp = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password: password })
+      });
+      var data = await resp.json();
+      if (!resp.ok) return { ok: false, error: data.error || 'Login failed' };
+      saveSession(data.token, data.username);
+      return { ok: true, user: { username: data.username } };
+    } catch (e) {
+      return { ok: false, error: 'Network error' };
+    }
   }
 
   function logout() {
-    window.Storage.remove(SESSION_KEY);
+    clearSession();
   }
 
   function currentUser() {
-    const key = window.Storage.get(SESSION_KEY);
-    if (!key) return null;
-    const users = getUsers();
-    return users[key] || null;
+    var token = getToken();
+    if (!token) return null;
+    return getStoredUser();
   }
 
   function isLoggedIn() {
-    return !!currentUser();
+    return !!getToken();
   }
 
-  // Project storage key scoped to current user
-  function projectsKey() {
-    const key = window.Storage.get(SESSION_KEY);
-    return key ? 'strudel_projects_' + key : 'strudel_projects';
+  function authHeaders() {
+    var token = getToken();
+    if (!token) return {};
+    return { 'Authorization': 'Bearer ' + token };
   }
 
   window.Auth = {
-    register,
-    login,
-    logout,
-    currentUser,
-    isLoggedIn,
-    projectsKey
+    register: register,
+    login: login,
+    logout: logout,
+    currentUser: currentUser,
+    isLoggedIn: isLoggedIn,
+    authHeaders: authHeaders
   };
 })();

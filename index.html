@@ -38,32 +38,21 @@
       <button class="icon-btn" id="btnExamples" title="Examples"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></button>
       <button class="icon-btn" id="btnSounds" title="Sounds"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>
       <button class="icon-btn" id="btnProjects" title="Projects"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
-      <button class="icon-btn" id="btnConsole" title="Console"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></button>
       <button class="icon-btn" id="btnSettings" title="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     </div>
   </div>
 
   <!-- TRANSPORT -->
   <div class="transport">
-    <button class="transport-btn play" id="playBtn">▶ Play</button>
-    <button class="transport-btn eval" id="evalBtn">⟳ Eval</button>
-    <button class="transport-btn hush" id="hushBtn">⏹ Hush</button>
-    <div class="beat-bar" id="beatBar"></div>
-    <div class="cps-group">
-      <span class="cps-label">CPS</span>
-      <input type="number" class="cps-input" id="cpsInput" value="1" min="0.1" max="10" step="0.05">
-    </div>
+    <button class="transport-btn play" id="playBtn">play</button>
+    <button class="transport-btn eval" id="evalBtn">update</button>
+    <button class="transport-btn hush" id="hushBtn">stop</button>
   </div>
 
   <!-- EDITOR -->
   <div class="editor-area">
-    <div class="editor-info">
-      <span>strudel · mini notation</span>
-      <span id="charCount">0 chars</span>
-    </div>
     <div class="editor-container">
       <div class="line-numbers" id="lineNumbers" aria-hidden="true"></div>
-      <div class="hl-active-line off" id="activeLine"></div>
       <div class="hap-highlights" id="hapHighlights"></div>
       <pre class="highlight-layer" id="highlightLayer" aria-hidden="true"></pre>
       <textarea id="editor"
@@ -71,52 +60,16 @@
         autocapitalize="off"
         autocorrect="off"
         autocomplete="off"
-        placeholder="// write a pattern and press Play"></textarea>
+        placeholder="// write a pattern and press play"></textarea>
     </div>
   </div>
 
-  <!-- SNIPPETS -->
-  <div class="snippet-bar">
-    <span class="snippet-category">SND</span>
-    <button class="snippet-btn" data-s='s("")'>s("")</button>
-    <button class="snippet-btn" data-s='note("")'>note("")</button>
-    <button class="snippet-btn" data-s='n("")'>n("")</button>
-    <button class="snippet-btn" data-s='sound("")'>sound("")</button>
-    <span class="snippet-category">TIME</span>
-    <button class="snippet-btn" data-s=".slow(2)">.slow()</button>
-    <button class="snippet-btn" data-s=".fast(2)">.fast()</button>
-    <button class="snippet-btn" data-s=".rev()">.rev()</button>
-    <button class="snippet-btn" data-s=".jux(rev)">.jux()</button>
-    <button class="snippet-btn" data-s=".early(0.25)">.early()</button>
-    <button class="snippet-btn" data-s=".late(0.25)">.late()</button>
-    <span class="snippet-category">FX</span>
-    <button class="snippet-btn" data-s=".room(0.5)">.room()</button>
-    <button class="snippet-btn" data-s=".delay(0.5)">.delay()</button>
-    <button class="snippet-btn" data-s=".lpf(800)">.lpf()</button>
-    <button class="snippet-btn" data-s=".hpf(200)">.hpf()</button>
-    <button class="snippet-btn" data-s=".gain(0.8)">.gain()</button>
-    <button class="snippet-btn" data-s=".pan(sine)">.pan()</button>
-    <button class="snippet-btn" data-s='.vowel("a e i")'>.vowel()</button>
-    <button class="snippet-btn" data-s=".crush(4)">.crush()</button>
-    <span class="snippet-category">TONE</span>
-    <button class="snippet-btn" data-s='.scale("C:minor")'>.scale()</button>
-    <button class="snippet-btn" data-s=".voicing()">.voicing()</button>
-    <button class="snippet-btn" data-s=".transpose(12)">.transpose()</button>
-    <span class="snippet-category">PAT</span>
-    <button class="snippet-btn" data-s=".sometimes(x => x.fast(2))">.sometimes()</button>
-    <button class="snippet-btn" data-s=".every(4, x => x.rev())">.every()</button>
-    <button class="snippet-btn" data-s="stack(&#10;  ,&#10;)">stack()</button>
-    <button class="snippet-btn" data-s=".superimpose(x => x.add(note(12)))">.superimpose()</button>
-    <button class="snippet-btn" data-s=".ply(2)">.ply()</button>
-    <button class="snippet-btn" data-s=".clip(1)">.clip()</button>
-    <span class="snippet-category">MINI</span>
-    <button class="snippet-btn" data-s="<>">&lt; &gt;</button>
-    <button class="snippet-btn" data-s="[ ]">[ ]</button>
-    <button class="snippet-btn" data-s="*2">*n</button>
-    <button class="snippet-btn" data-s="/2">/n</button>
-    <button class="snippet-btn" data-s="(3,8)">(k,n)</button>
-    <button class="snippet-btn" data-s="?">?</button>
-    <button class="snippet-btn" data-s="~">~</button>
+  <!-- SNIPPETS TRIGGER -->
+  <div class="snippets-trigger">
+    <button class="snippets-btn" id="btnSnippets" title="Modules">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>modules</span>
+    </button>
   </div>
 
   <!-- STATUS BAR -->
@@ -136,7 +89,7 @@
     <div class="panel-handle"></div>
     <div class="panel-header">
       <span class="panel-title">Projects</span>
-      <button class="panel-close" onclick="UI.closePanel('projectsPanel')">✕</button>
+      <button class="panel-close" onclick="UI.closePanel('projectsPanel')">&#10005;</button>
     </div>
     <div class="panel-actions">
       <button class="panel-action-btn primary" onclick="App.saveProject()">Save</button>
@@ -157,7 +110,7 @@
     <div class="panel-handle"></div>
     <div class="panel-header">
       <span class="panel-title">Examples</span>
-      <button class="panel-close" onclick="UI.closePanel('examplesPanel')">✕</button>
+      <button class="panel-close" onclick="UI.closePanel('examplesPanel')">&#10005;</button>
     </div>
     <div class="tab-bar" id="exampleTabs"></div>
     <div class="panel-body" id="exampleList"></div>
@@ -170,7 +123,7 @@
     <div class="panel-handle"></div>
     <div class="panel-header">
       <span class="panel-title">Sounds</span>
-      <button class="panel-close" onclick="UI.closePanel('soundsPanel')">✕</button>
+      <button class="panel-close" onclick="UI.closePanel('soundsPanel')">&#10005;</button>
     </div>
     <div style="padding:6px 16px">
       <input type="text" class="dialog-input" id="soundSearch" placeholder="Search" style="height:34px;font-size:13px">
@@ -180,13 +133,90 @@
   </div>
 </div>
 
+<!-- ===== SNIPPETS PANEL ===== -->
+<div class="overlay" id="snippetsPanel">
+  <div class="panel">
+    <div class="panel-handle"></div>
+    <div class="panel-header">
+      <span class="panel-title">Modules</span>
+      <button class="panel-close" onclick="UI.closePanel('snippetsPanel')">&#10005;</button>
+    </div>
+    <div class="panel-body snippets-panel-body" id="snippetsList">
+      <div class="snippet-section">
+        <div class="snippet-section-title">Sound</div>
+        <div class="snippet-grid">
+          <button class="snip-btn" data-s='s("")'>s("")</button>
+          <button class="snip-btn" data-s='note("")'>note("")</button>
+          <button class="snip-btn" data-s='n("")'>n("")</button>
+          <button class="snip-btn" data-s='sound("")'>sound("")</button>
+        </div>
+      </div>
+      <div class="snippet-section">
+        <div class="snippet-section-title">Time</div>
+        <div class="snippet-grid">
+          <button class="snip-btn" data-s=".slow(2)">.slow()</button>
+          <button class="snip-btn" data-s=".fast(2)">.fast()</button>
+          <button class="snip-btn" data-s=".rev()">.rev()</button>
+          <button class="snip-btn" data-s=".jux(rev)">.jux()</button>
+          <button class="snip-btn" data-s=".early(0.25)">.early()</button>
+          <button class="snip-btn" data-s=".late(0.25)">.late()</button>
+        </div>
+      </div>
+      <div class="snippet-section">
+        <div class="snippet-section-title">Effects</div>
+        <div class="snippet-grid">
+          <button class="snip-btn" data-s=".room(0.5)">.room()</button>
+          <button class="snip-btn" data-s=".delay(0.5)">.delay()</button>
+          <button class="snip-btn" data-s=".lpf(800)">.lpf()</button>
+          <button class="snip-btn" data-s=".hpf(200)">.hpf()</button>
+          <button class="snip-btn" data-s=".gain(0.8)">.gain()</button>
+          <button class="snip-btn" data-s=".pan(sine)">.pan()</button>
+          <button class="snip-btn" data-s='.vowel("a e i")'>.vowel()</button>
+          <button class="snip-btn" data-s=".crush(4)">.crush()</button>
+        </div>
+      </div>
+      <div class="snippet-section">
+        <div class="snippet-section-title">Tone</div>
+        <div class="snippet-grid">
+          <button class="snip-btn" data-s='.scale("C:minor")'>.scale()</button>
+          <button class="snip-btn" data-s=".voicing()">.voicing()</button>
+          <button class="snip-btn" data-s=".transpose(12)">.transpose()</button>
+        </div>
+      </div>
+      <div class="snippet-section">
+        <div class="snippet-section-title">Pattern</div>
+        <div class="snippet-grid">
+          <button class="snip-btn" data-s=".sometimes(x => x.fast(2))">.sometimes()</button>
+          <button class="snip-btn" data-s=".every(4, x => x.rev())">.every()</button>
+          <button class="snip-btn" data-s="stack(&#10;  ,&#10;)">stack()</button>
+          <button class="snip-btn" data-s=".superimpose(x => x.add(note(12)))">.superimpose()</button>
+          <button class="snip-btn" data-s=".ply(2)">.ply()</button>
+          <button class="snip-btn" data-s=".clip(1)">.clip()</button>
+        </div>
+      </div>
+      <div class="snippet-section">
+        <div class="snippet-section-title">Mini notation</div>
+        <div class="snippet-grid">
+          <button class="snip-btn" data-s="<>">&lt; &gt;</button>
+          <button class="snip-btn" data-s="[ ]">[ ]</button>
+          <button class="snip-btn" data-s="*2">*n</button>
+          <button class="snip-btn" data-s="/2">/n</button>
+          <button class="snip-btn" data-s="(3,8)">(k,n)</button>
+          <button class="snip-btn" data-s="?">?</button>
+          <button class="snip-btn" data-s="~">~</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ===== SETTINGS PANEL ===== -->
 <div class="overlay" id="settingsPanel">
   <div class="panel">
     <div class="panel-handle"></div>
     <div class="panel-header">
       <span class="panel-title">Settings</span>
-      <button class="panel-close" onclick="UI.closePanel('settingsPanel')">✕</button>
+      <button class="panel-close" onclick="UI.closePanel('settingsPanel')">&#10005;</button>
     </div>
     <div class="panel-body">
       <div class="setting-row">
@@ -195,9 +225,9 @@
           <div style="font-size:10px;color:var(--text-dim);margin-top:1px">Editor text size</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <button class="icon-btn" onclick="App.adjustFont(-1)" style="width:26px;height:26px;font-size:15px;border:1px solid var(--border)">−</button>
+          <button class="icon-btn" onclick="App.adjustFont(-1)" style="width:26px;height:26px;font-size:15px;border:1px solid var(--border)">&#8722;</button>
           <span class="setting-value" id="fontSizeValue">14</span>
-          <button class="icon-btn" onclick="App.adjustFont(1)" style="width:26px;height:26px;font-size:15px;border:1px solid var(--border)">＋</button>
+          <button class="icon-btn" onclick="App.adjustFont(1)" style="width:26px;height:26px;font-size:15px;border:1px solid var(--border)">&#65291;</button>
         </div>
       </div>
       <div class="setting-row">
@@ -205,54 +235,28 @@
           <div style="font-size:13px">Samples</div>
           <div style="font-size:10px;color:var(--text-dim);margin-top:1px">dirt-samples, piano, drum machines, VCSL</div>
         </div>
-        <span class="setting-value" id="samplesStatus">…</span>
+        <span class="setting-value" id="samplesStatus">...</span>
       </div>
       <div class="setting-row">
         <div>
           <div style="font-size:13px">Audio engine</div>
           <div style="font-size:10px;color:var(--text-dim);margin-top:1px">WebAudio context state</div>
         </div>
-        <span class="setting-value" id="audioStatus">…</span>
-      </div>
-      <div class="setting-row">
-        <div>
-          <div style="font-size:13px">Storage</div>
-          <div style="font-size:10px;color:var(--text-dim);margin-top:1px">Project persistence</div>
-        </div>
-        <span class="setting-value" id="storageStatus">…</span>
+        <span class="setting-value" id="audioStatus">...</span>
       </div>
       <div class="setting-row">
         <div>
           <div style="font-size:13px">Keyboard shortcuts</div>
           <div style="font-size:10px;color:var(--text-dim);margin-top:1px">Desktop</div>
         </div>
-        <span class="setting-value" style="font-size:10px">Ctrl+Enter · Ctrl+. · Ctrl+S</span>
+        <span class="setting-value" style="font-size:10px">Ctrl+Enter / Ctrl+. / Ctrl+S</span>
       </div>
       <div class="setting-row">
         <div>
           <div style="font-size:13px">About</div>
           <div style="font-size:10px;color:var(--text-dim);margin-top:1px">AGPL-3.0 license</div>
         </div>
-        <a href="https://strudel.cc" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px;text-decoration:none">strudel.cc ↗</a>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ===== CONSOLE PANEL ===== -->
-<div class="overlay" id="consolePanel">
-  <div class="panel">
-    <div class="panel-handle"></div>
-    <div class="panel-header">
-      <span class="panel-title">Console</span>
-      <div style="display:flex;gap:6px">
-        <button class="panel-close" onclick="App.clearConsole()" title="Clear" style="font-size:11px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
-        <button class="panel-close" onclick="UI.closePanel('consolePanel')">✕</button>
-      </div>
-    </div>
-    <div class="panel-body">
-      <div class="console-log" id="consoleLog">
-        <div class="log-info">Console ready.</div>
+        <a href="https://strudel.cc" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px;text-decoration:none">strudel.cc</a>
       </div>
     </div>
   </div>
@@ -302,7 +306,7 @@
 <!-- FILE INPUT (hidden) -->
 <input type="file" class="hidden" id="fileInput" accept=".json,.strudel">
 
-<!-- SCRIPTS — order matters -->
+<!-- SCRIPTS -->
 <script src="js/storage.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/highlight.js"></script>
@@ -311,11 +315,6 @@
 <script src="js/projects.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/app.js"></script>
-
-<!-- Show storage status after init -->
-<script>
-  document.getElementById('storageStatus').textContent = window.Storage.available ? '✓ localStorage' : '⚠ in-memory';
-</script>
 
 </body>
 </html>

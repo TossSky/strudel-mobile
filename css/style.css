@@ -1,10 +1,8 @@
 /* ============================================
    Strudel Mobile REPL — Styles
-   Matching strudel.cc REPL dark theme
    ============================================ */
 
 :root {
-  /* Core palette — matches strudel.cc */
   --bg-deep: #131313;
   --bg: #1a1a1a;
   --bg-surface: #222222;
@@ -19,12 +17,10 @@
   --text-dim: #888888;
   --text-faint: #555555;
 
-  /* Accent — neutral white */
   --accent: #e0e0e0;
   --accent-dim: rgba(224, 224, 224, 0.10);
   --accent-glow: rgba(224, 224, 224, 0.18);
 
-  /* Semantic */
   --blue: #82aaff;
   --blue-dim: rgba(130, 170, 255, 0.12);
   --green: #c3e88d;
@@ -35,7 +31,6 @@
   --magenta: #c792ea;
   --cyan: #89ddff;
 
-  /* Syntax */
   --syn-keyword: #c792ea;
   --syn-fn: #82aaff;
   --syn-string: #c3e88d;
@@ -44,9 +39,8 @@
   --syn-operator: #89ddff;
   --syn-bracket: #e8c36e;
 
-  /* Fonts */
   --font-mono: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
-  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-ui: 'Consolas', 'Menlo', 'Courier New', monospace;
 
   --radius: 6px;
   --radius-sm: 4px;
@@ -100,17 +94,13 @@ html, body {
   gap: 10px;
 }
 .logo {
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.5px;
 }
-.logo-symbol {
-  color: var(--accent);
-}
-.logo-text {
-  color: var(--text);
-}
+.logo-symbol { color: var(--accent); }
+.logo-text { color: var(--text); }
 .logo-repl {
   color: var(--text-dim);
   font-weight: 400;
@@ -178,6 +168,7 @@ html, body {
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 15px;
+  font-family: var(--font-ui);
   transition: all 0.12s;
   flex-shrink: 0;
 }
@@ -197,7 +188,7 @@ html, body {
 }
 .transport-btn {
   height: 32px;
-  padding: 0 14px;
+  padding: 0 18px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-raised);
@@ -208,11 +199,12 @@ html, body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
   cursor: pointer;
   transition: all 0.12s;
   white-space: nowrap;
   flex-shrink: 0;
+  text-transform: lowercase;
+  letter-spacing: 0.5px;
 }
 .transport-btn:active { transform: scale(0.95); }
 
@@ -238,69 +230,6 @@ html, body {
 }
 .transport-btn.hush:hover { background: var(--bg-surface); }
 
-/* Cycle progress bar */
-.beat-bar {
-  flex: 1;
-  height: 6px;
-  min-width: 40px;
-  margin: 0 8px;
-  background: var(--bg-input);
-  border-radius: 3px;
-  overflow: hidden;
-  position: relative;
-}
-.beat-bar-fill {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 0%;
-  background: var(--accent);
-  border-radius: 3px;
-  transition: none;
-  box-shadow: 0 0 4px var(--accent-glow);
-}
-.beat-bar-cursor {
-  position: absolute;
-  top: -3px;
-  width: 3px;
-  height: 12px;
-  background: var(--accent);
-  border-radius: 1.5px;
-  left: 0%;
-  transition: none;
-  box-shadow: 0 0 6px var(--accent-glow);
-}
-
-/* CPS input */
-.cps-group {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
-}
-.cps-label {
-  font-size: 9px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-}
-.cps-input {
-  width: 52px;
-  height: 28px;
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--accent);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  text-align: center;
-  outline: none;
-}
-.cps-input:focus { border-color: var(--accent); }
-
 /* ===== EDITOR AREA ===== */
 .editor-area {
   flex: 1;
@@ -309,17 +238,6 @@ html, body {
   overflow: hidden;
   position: relative;
   min-height: 0;
-}
-.editor-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2px 12px;
-  font-size: 10px;
-  color: var(--text-faint);
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
 }
 .editor-container {
   flex: 1;
@@ -364,6 +282,7 @@ html, body {
   padding: 12px 12px 12px 10px;
   white-space: pre-wrap;
   word-wrap: break-word;
+  overflow-wrap: break-word;
   overflow-y: auto;
   overflow-x: hidden;
   tab-size: 2;
@@ -379,6 +298,7 @@ html, body {
   resize: none;
   z-index: 2;
   -webkit-text-size-adjust: none;
+  touch-action: pan-y pinch-zoom;
 }
 .editor-container textarea::selection {
   background: rgba(130, 170, 255, 0.25);
@@ -404,10 +324,8 @@ html, body {
 .hl-paren { color: var(--text); }
 .hl-label { color: #e0e0e0; font-weight: 700; }
 
-/* Active note highlight rectangles (Strudel-style) */
-.hl-active-line {
-  display: none; /* legacy — replaced by hap highlights */
-}
+/* Active note highlight rectangles */
+.hl-active-line { display: none; }
 .hap-highlights {
   position: absolute;
   top: 0;
@@ -431,36 +349,59 @@ html, body {
   background: rgba(130, 170, 255, 0.10);
 }
 
-/* ===== SNIPPET BAR ===== */
-.snippet-bar {
+/* ===== SNIPPETS TRIGGER ===== */
+.snippets-trigger {
   display: flex;
-  gap: 4px;
-  padding: 5px 10px;
-  overflow-x: auto;
-  flex-shrink: 0;
+  padding: 6px 12px;
   background: var(--bg);
   border-top: 1px solid var(--border);
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.snippet-bar::-webkit-scrollbar { display: none; }
-.snippet-category {
   flex-shrink: 0;
-  padding: 0 6px;
-  display: flex;
+}
+.snippets-btn {
+  display: inline-flex;
   align-items: center;
-  font-size: 9px;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.snippets-btn:hover { border-color: var(--accent); color: var(--text); }
+.snippets-btn:active { transform: scale(0.96); }
+
+/* ===== SNIPPET PANEL BODY ===== */
+.snippets-panel-body {
+  padding: 8px 16px 28px;
+}
+.snippet-section {
+  margin-bottom: 16px;
+}
+.snippet-section-title {
+  font-size: 10px;
+  font-weight: 700;
   color: var(--blue);
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  font-weight: 700;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
 }
-.snippet-btn {
-  flex-shrink: 0;
-  height: 26px;
-  padding: 0 9px;
+.snippet-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.snip-btn {
+  height: 30px;
+  padding: 0 10px;
   border: 1px solid var(--border);
-  border-radius: 13px;
+  border-radius: 15px;
   background: var(--bg-raised);
   color: var(--text-dim);
   font-family: var(--font-mono);
@@ -471,11 +412,11 @@ html, body {
   display: inline-flex;
   align-items: center;
 }
-.snippet-btn:hover {
+.snip-btn:hover {
   border-color: var(--blue);
   color: var(--blue);
 }
-.snippet-btn:active {
+.snip-btn:active {
   background: var(--accent-dim);
   color: var(--accent);
   border-color: var(--accent);
@@ -513,7 +454,7 @@ html, body {
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 .cycle-counter {
   color: var(--accent);
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-weight: 600;
   font-size: 10px;
 }
@@ -574,6 +515,7 @@ html, body {
   border-radius: 50%;
   cursor: pointer;
   font-size: 13px;
+  font-family: var(--font-ui);
 }
 .panel-close:hover { background: var(--bg-hover); color: var(--text); }
 .panel-actions {
@@ -687,6 +629,7 @@ html, body {
   position: relative;
   white-space: nowrap;
   flex-shrink: 0;
+  font-family: var(--font-ui);
   transition: color 0.12s;
 }
 .tab-btn:hover { color: var(--text); }
@@ -733,12 +676,8 @@ html, body {
   transition: color 0.1s;
   white-space: nowrap;
 }
-.sound-item:hover {
-  color: var(--accent);
-}
-.sound-item:active {
-  color: var(--blue);
-}
+.sound-item:hover { color: var(--accent); }
+.sound-item:active { color: var(--blue); }
 
 /* ===== SETTINGS ===== */
 .setting-row {
@@ -753,26 +692,8 @@ html, body {
   font-size: 13px;
   font-weight: 600;
   color: var(--accent);
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
 }
-
-/* ===== CONSOLE ===== */
-.console-log {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 1.6;
-  color: var(--text-dim);
-  max-height: 300px;
-  overflow-y: auto;
-}
-.console-log div {
-  padding: 2px 0;
-  border-bottom: 1px solid rgba(51,51,51,0.3);
-}
-.log-err { color: var(--red); }
-.log-warn { color: var(--orange); }
-.log-info { color: var(--blue); }
-.log-ok { color: var(--green); }
 
 /* ===== DIALOG ===== */
 .dialog-overlay {
@@ -841,7 +762,7 @@ html, body {
   padding: 9px 14px;
   border-radius: var(--radius);
   font-size: 12px;
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   z-index: 300;
   transform: translateY(14px);
   opacity: 0;
@@ -872,7 +793,7 @@ html, body {
   font-size: 26px;
   font-weight: 700;
   color: var(--accent);
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   margin-bottom: 14px;
 }
 .spinner {
@@ -897,7 +818,6 @@ html, body {
 /* ===== DESKTOP ===== */
 @media (min-width: 768px) {
   .header, .transport { padding: 0 16px; }
-  .snippet-bar { padding: 5px 16px; }
   .line-numbers {
     width: 42px;
     font-size: 15px;
@@ -913,9 +833,6 @@ html, body {
   .panel { max-width: 420px; left: auto; right: 16px; }
   .project-name { max-width: 220px; }
   .toast { max-width: 380px; }
-  .beat-bar { height: 8px; border-radius: 4px; }
-  .beat-bar-fill { border-radius: 4px; }
-  .beat-bar-cursor { height: 14px; top: -3px; }
 }
 
 /* ===== LANDSCAPE MOBILE ===== */
@@ -924,9 +841,9 @@ html, body {
   .transport { height: 36px; padding: 0 8px; gap: 3px; }
   .icon-btn { width: 28px; height: 28px; font-size: 13px; }
   .transport-btn { height: 26px; padding: 0 9px; font-size: 11px; }
-  .snippet-bar { padding: 3px 8px; }
-  .snippet-btn { height: 22px; font-size: 10px; }
   .line-numbers { width: 30px; font-size: 13px; padding-top: 8px; }
   .editor-container textarea,
   .editor-container .highlight-layer { left: 30px; width: calc(100% - 30px); font-size: 13px; padding: 8px; }
+  .snippets-trigger { padding: 3px 8px; }
+  .snippets-btn { height: 26px; font-size: 10px; }
 }
