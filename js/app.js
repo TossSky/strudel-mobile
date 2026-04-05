@@ -66,6 +66,58 @@ note("c3 [e3 g3] a3 <f3 d3>")
     }
   });
 
+  // Ctrl+/ — toggle line comments (VS Code style)
+  editor.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+      e.preventDefault();
+      const val = editor.value;
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+
+      // Find line boundaries for selection
+      const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+      let lineEnd = val.indexOf('\n', end);
+      if (lineEnd === -1) lineEnd = val.length;
+
+      const selectedText = val.substring(lineStart, lineEnd);
+      const lines = selectedText.split('\n');
+
+      // Check if all non-empty lines are commented
+      const allCommented = lines.every(l => l.trim() === '' || l.trimStart().startsWith('//'));
+
+      let newLines;
+      if (allCommented) {
+        // Uncomment: remove first occurrence of "// " or "//"
+        newLines = lines.map(l => {
+          const idx = l.indexOf('//');
+          if (idx === -1) return l;
+          if (l[idx + 2] === ' ') return l.substring(0, idx) + l.substring(idx + 3);
+          return l.substring(0, idx) + l.substring(idx + 2);
+        });
+      } else {
+        // Comment: add "// " at the start of each line
+        newLines = lines.map(l => '// ' + l);
+      }
+
+      const replacement = newLines.join('\n');
+      editor.value = val.substring(0, lineStart) + replacement + val.substring(lineEnd);
+
+      // Restore selection
+      editor.selectionStart = lineStart;
+      editor.selectionEnd = lineStart + replacement.length;
+      editor.dispatchEvent(new Event('input'));
+    }
+  });
+
+  // Ctrl+Mouse wheel — zoom font size
+  editor.addEventListener('wheel', e => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 1 : -1;
+      window.App.adjustFont(delta);
+    }
+  }, { passive: false });
+
   // --- Active line highlight ---
   function updateActiveLinePosition() {
     if (!activeLineHL) return;
@@ -449,13 +501,28 @@ note("c3 [e3 g3] a3 <f3 d3>")
   }
 
   window.App.setSoundTab = function (tab) { soundTab = tab; renderSounds(); };
-  window.App.insertSound = function (name) {
-    const pos = editor.selectionStart;
-    editor.value = editor.value.substring(0, pos) + name + editor.value.substring(editor.selectionEnd);
-    editor.selectionStart = editor.selectionEnd = pos + name.length;
-    editor.focus();
-    editor.dispatchEvent(new Event('input'));
-    UI.closePanel('soundsPanel');
+
+  // Preview sound — play it once instead of inserting into code
+  window.App.insertSound = async function (name) {
+    if (!Engine.ready) { UI.toast('Engine loading...', 'info'); return; }
+    try {
+      await Engine.ensureAudio();
+      // Use strudel's evaluate to play a one-shot sound
+      const isSynth = SYNTH_SOUNDS.includes(name);
+      const code = isSynth
+        ? 's("' + name + '").note("c3").release(0.5).gain(0.7)'
+        : 's("' + name + '").gain(0.7)';
+      await window.evaluate(code);
+      UI.toast(name, 'info');
+      // Stop after a short preview
+      setTimeout(() => {
+        try { window.hush(); } catch (_) {}
+        Engine.playing = false;
+      }, 1500);
+    } catch (e) {
+      console.warn('[App] Sound preview error:', e.message);
+      UI.toast('Preview failed', 'error');
+    }
   };
 
   // =======================================
