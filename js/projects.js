@@ -1,20 +1,22 @@
 /**
  * projects.js — Project management via server API
- * Caches projects locally, syncs with server when authenticated
+ *
+ * Async methods (save, remove, rename, sync, importData) talk to the server.
+ * Sync methods (getAll, find) read from a local in-memory cache that is
+ * populated by sync().  This keeps rendering code synchronous.
  */
 (function () {
   'use strict';
 
-  // Local cache of projects (avoids async in render paths)
   var cache = [];
 
-  function headers() {
+  function hdrs() {
     var h = Auth.authHeaders();
     h['Content-Type'] = 'application/json';
     return h;
   }
 
-  /** Fetch all projects from server and update cache */
+  /** Fetch all projects from server and refresh cache */
   async function sync() {
     if (!Auth.isLoggedIn()) { cache = []; return []; }
     try {
@@ -28,10 +30,17 @@
     }
   }
 
+  /** Read cache (sync) */
   function getAll() {
     return cache;
   }
 
+  /** Find by id in cache (sync) */
+  function find(id) {
+    return cache.find(function (p) { return p.id === id; }) || null;
+  }
+
+  /** Create or update a project on the server */
   async function save(project) {
     if (!Auth.isLoggedIn()) return null;
     try {
@@ -45,7 +54,7 @@
       }
       var resp = await fetch(url, {
         method: method,
-        headers: headers(),
+        headers: hdrs(),
         body: JSON.stringify({
           name: project.name || 'untitled',
           code: project.code || '',
@@ -54,7 +63,6 @@
       });
       if (!resp.ok) throw new Error('save failed');
       var saved = await resp.json();
-      // Update cache
       var idx = cache.findIndex(function (p) { return p.id === saved.id; });
       if (idx !== -1) cache[idx] = saved;
       else cache.unshift(saved);
@@ -65,6 +73,7 @@
     }
   }
 
+  /** Delete a project on the server */
   async function remove(id) {
     if (!Auth.isLoggedIn()) return;
     try {
@@ -75,16 +84,13 @@
     }
   }
 
-  function find(id) {
-    return cache.find(function (p) { return p.id === id; }) || null;
-  }
-
+  /** Rename a project on the server */
   async function rename(id, newName) {
     if (!Auth.isLoggedIn()) return null;
     try {
       var resp = await fetch('/api/projects/' + id + '/rename', {
         method: 'PUT',
-        headers: headers(),
+        headers: hdrs(),
         body: JSON.stringify({ name: newName })
       });
       if (!resp.ok) throw new Error('rename failed');
@@ -97,6 +103,8 @@
       return null;
     }
   }
+
+  // --- Client-side export / import helpers ---
 
   function exportProject(project) {
     return {
@@ -153,16 +161,22 @@
     URL.revokeObjectURL(a.href);
   }
 
+  /** Clear the local cache (used on logout) */
+  function clearCache() {
+    cache = [];
+  }
+
   window.Projects = {
     sync: sync,
     getAll: getAll,
+    find: find,
     save: save,
     remove: remove,
-    find: find,
     rename: rename,
     exportProject: exportProject,
     exportAll: exportAll,
     importData: importData,
-    download: download
+    download: download,
+    clearCache: clearCache
   };
 })();

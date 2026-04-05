@@ -9,28 +9,28 @@
   // Ensure App namespace exists early
   window.App = window.App || {};
 
-  // ─── State ───
+  // --- State ---
   let currentProject = null;
   let fontSize = 14;
+  let currentCps = 1;
 
-  // ─── DOM refs ───
+  // --- DOM refs ---
   const editor = $('editor');
   const hlLayer = $('highlightLayer');
   const lineNums = $('lineNumbers');
   const playBtn = $('playBtn');
-  const cpsInput = $('cpsInput');
 
   const DEFAULT_CODE = `// strudel REPL
-// Press Play to start!
+// Press play to start!
 
 note("c3 [e3 g3] a3 <f3 d3>")
   .s("piano")
   .room(0.4)
   .slow(2)`;
 
-  // ═══════════════════════════════════════
+  // =======================================
   //  EDITOR — sync highlight + scroll
-  // ═══════════════════════════════════════
+  // =======================================
   function syncHighlight() {
     hlLayer.innerHTML = Highlight.highlight(editor.value) + '\n';
     updateLineNumbers();
@@ -52,7 +52,6 @@ note("c3 [e3 g3] a3 <f3 d3>")
   });
   editor.addEventListener('input', () => {
     syncHighlight();
-    $('charCount').textContent = editor.value.length + ' chars';
   });
 
   // Tab key inserts 2 spaces
@@ -67,11 +66,11 @@ note("c3 [e3 g3] a3 <f3 d3>")
     }
   });
 
-  // ═══════════════════════════════════════
+  // =======================================
   //  TRANSPORT CONTROLS
-  // ═══════════════════════════════════════
+  // =======================================
   function getCps() {
-    return parseFloat(cpsInput.value) || 1;
+    return currentCps || 1;
   }
 
   async function doPlay() {
@@ -85,10 +84,9 @@ note("c3 [e3 g3] a3 <f3 d3>")
       Engine.stop();
       Engine.playing = false;
       playBtn.classList.remove('active');
-      playBtn.textContent = '▶ Play';
+      playBtn.textContent = 'play';
       UI.setStatus('ok', 'Stopped');
       UI.stopBeatAnimation();
-      UI.addLog('Stopped', 'info');
       return;
     }
 
@@ -99,18 +97,15 @@ note("c3 [e3 g3] a3 <f3 d3>")
     }
 
     try {
-      UI.addLog('Evaluating...', 'info');
       await Engine.evalCode(code, getCps());
       playBtn.classList.add('active');
-      playBtn.textContent = '⏹ Stop';
+      playBtn.textContent = 'stop';
       UI.setStatus('on', 'Playing');
-      UI.addLog('Playing!', 'ok');
       UI.startBeatAnimation(getCps);
     } catch (e) {
       console.error('[App] Play error:', e);
       UI.toast(e.message || 'Error', 'error');
       UI.setStatus('err', 'Error');
-      UI.addLog('ERROR: ' + (e.message || e), 'err');
     }
   }
 
@@ -124,19 +119,16 @@ note("c3 [e3 g3] a3 <f3 d3>")
     if (!code) return;
 
     try {
-      UI.addLog('Re-evaluating...', 'info');
       await Engine.evalCode(code, getCps());
       playBtn.classList.add('active');
-      playBtn.textContent = '⏹ Stop';
+      playBtn.textContent = 'stop';
       UI.setStatus('on', 'Updated');
       UI.toast('Pattern updated', 'success');
-      UI.addLog('Pattern updated', 'ok');
       UI.startBeatAnimation(getCps);
     } catch (e) {
       console.error('[App] Eval error:', e);
       UI.toast(e.message || 'Error', 'error');
       UI.setStatus('err', 'Error');
-      UI.addLog('ERROR: ' + (e.message || e), 'err');
     }
   }
 
@@ -144,42 +136,28 @@ note("c3 [e3 g3] a3 <f3 d3>")
     Engine.stop();
     Engine.playing = false;
     playBtn.classList.remove('active');
-    playBtn.textContent = '▶ Play';
+    playBtn.textContent = 'play';
     UI.setStatus('ok', 'Hushed');
     UI.stopBeatAnimation();
-    UI.addLog('Hushed', 'info');
   }
 
   playBtn.onclick = doPlay;
   $('evalBtn').onclick = doEval;
   $('hushBtn').onclick = doHush;
 
-  // CPS live update
-  cpsInput.onchange = () => {
-    if (!Engine.ready || !Engine.playing) return;
-    const v = getCps();
-    try {
-      var fn = window.setcps || window.setCps;
-      if (typeof fn === 'function') fn(v);
-      UI.addLog('CPS → ' + v, 'info');
-    } catch (e) {
-      console.warn('[App] CPS change error:', e);
-    }
-  };
-
-  // ═══════════════════════════════════════
+  // =======================================
   //  KEYBOARD SHORTCUTS
-  // ═══════════════════════════════════════
+  // =======================================
   document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); doEval(); }
     if ((e.ctrlKey || e.metaKey) && e.key === '.') { e.preventDefault(); doHush(); }
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveProject(); }
   });
 
-  // ═══════════════════════════════════════
+  // =======================================
   //  SNIPPETS
-  // ═══════════════════════════════════════
-  document.querySelectorAll('.snippet-btn').forEach(btn => {
+  // =======================================
+  document.querySelectorAll('.snip-btn').forEach(btn => {
     btn.onclick = () => {
       const sn = btn.dataset.s;
       const pos = editor.selectionStart;
@@ -201,26 +179,26 @@ note("c3 [e3 g3] a3 <f3 d3>")
       editor.selectionStart = editor.selectionEnd = pos + cur;
       editor.focus();
       editor.dispatchEvent(new Event('input'));
+      UI.closePanel('snippetsPanel');
     };
   });
 
-  // ═══════════════════════════════════════
+  // =======================================
   //  PANEL BUTTONS
-  // ═══════════════════════════════════════
+  // =======================================
   $('btnProjects').onclick = () => { renderProjectList(); UI.openPanel('projectsPanel'); };
   $('btnExamples').onclick = () => { renderExamples(); UI.openPanel('examplesPanel'); };
-  $('btnConsole').onclick = () => UI.openPanel('consolePanel');
   $('btnSettings').onclick = () => UI.openPanel('settingsPanel');
+  $('btnSnippets').onclick = () => UI.openPanel('snippetsPanel');
 
-  // ═══════════════════════════════════════
+  // =======================================
   //  PROJECTS
-  // ═══════════════════════════════════════
+  // =======================================
   function saveProject() {
     const code = editor.value;
     const cps = getCps();
 
     if (currentProject) {
-      // Existing project — just save
       currentProject = Projects.save({
         id: currentProject.id,
         name: currentProject.name,
@@ -229,9 +207,7 @@ note("c3 [e3 g3] a3 <f3 d3>")
       });
       renderProjectList();
       UI.toast('Project saved', 'success');
-      UI.addLog('Saved: ' + currentProject.name, 'ok');
     } else {
-      // New project — ask for a name first
       showSaveAsDialog(code, cps);
     }
   }
@@ -241,8 +217,6 @@ note("c3 [e3 g3] a3 <f3 d3>")
     $('saveAsInput').value = (label === 'untitled') ? '' : label;
     UI.showDialog('saveAsDialog');
     setTimeout(() => { $('saveAsInput').focus(); $('saveAsInput').select(); }, 100);
-
-    // Store pending save data
     window._pendingSave = { code, cps };
   }
 
@@ -258,13 +232,12 @@ note("c3 [e3 g3] a3 <f3 d3>")
     UI.hideDialog('saveAsDialog');
     renderProjectList();
     UI.toast('Project saved', 'success');
-    UI.addLog('Saved: ' + currentProject.name, 'ok');
   };
 
   function newProject() {
     doHush();
     editor.value = '';
-    cpsInput.value = '1';
+    currentCps = 1;
     currentProject = null;
     $('projectNameLabel').textContent = 'untitled';
     UI.closePanel('projectsPanel');
@@ -277,7 +250,7 @@ note("c3 [e3 g3] a3 <f3 d3>")
     if (!p) return;
     doHush();
     editor.value = p.code || '';
-    cpsInput.value = p.cps || '1';
+    currentCps = p.cps || 1;
     currentProject = p;
     $('projectNameLabel').textContent = p.name;
     UI.setStatus('ok', 'Loaded');
@@ -317,7 +290,7 @@ note("c3 [e3 g3] a3 <f3 d3>")
       return '<div class="project-item ' + (isCurrent ? 'current' : '') + '" onclick="App.loadProject(\'' + p.id + '\')">' +
         '<div style="flex:1;min-width:0">' +
           '<div class="project-name-text">' + (isCurrent ? '● ' : '') + Highlight.esc(p.name) + '</div>' +
-          '<div class="project-meta">' + date + ' · ' + (p.cps || 1) + ' CPS</div>' +
+          '<div class="project-meta">' + date + '</div>' +
           '<div class="project-preview">' + Highlight.esc(preview) + '</div>' +
         '</div>' +
         '<button class="project-delete" onclick="App.deleteProject(\'' + p.id + '\',event)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
@@ -325,13 +298,12 @@ note("c3 [e3 g3] a3 <f3 d3>")
     }).join('');
   }
 
-  // Expose for inline handlers
   window.App.loadProject = loadProject;
   window.App.deleteProject = deleteProject;
 
-  // ═══════════════════════════════════════
+  // =======================================
   //  IMPORT / EXPORT
-  // ═══════════════════════════════════════
+  // =======================================
   function exportCurrent() {
     const name = currentProject ? currentProject.name : 'untitled';
     Projects.download(
@@ -366,7 +338,7 @@ note("c3 [e3 g3] a3 <f3 d3>")
         } else if (result.type === 'single') {
           currentProject = result.project;
           editor.value = result.project.code || '';
-          cpsInput.value = result.project.cps || '1';
+          currentCps = result.project.cps || 1;
           $('projectNameLabel').textContent = result.project.name;
           editor.dispatchEvent(new Event('input'));
           renderProjectList();
@@ -380,16 +352,15 @@ note("c3 [e3 g3] a3 <f3 d3>")
     e.target.value = '';
   };
 
-  // Wire panel action buttons
   window.App.saveProject = saveProject;
   window.App.newProject = newProject;
   window.App.exportCurrent = exportCurrent;
   window.App.exportAll = exportAllProjects;
   window.App.triggerImport = () => $('fileInput').click();
 
-  // ═══════════════════════════════════════
+  // =======================================
   //  EXAMPLES
-  // ═══════════════════════════════════════
+  // =======================================
   let exampleTab = Object.keys(Examples)[0];
 
   function renderExamples() {
@@ -417,7 +388,7 @@ note("c3 [e3 g3] a3 <f3 d3>")
     if (!ex) return;
     doHush();
     editor.value = ex.code;
-    cpsInput.value = '1';
+    currentCps = 1;
     currentProject = null;
     $('projectNameLabel').textContent = ex.name;
     UI.setStatus('ok', 'Example loaded');
@@ -426,9 +397,9 @@ note("c3 [e3 g3] a3 <f3 d3>")
     UI.toast('Loaded: ' + ex.name, 'success');
   };
 
-  // ═══════════════════════════════════════
+  // =======================================
   //  SOUNDS PANEL
-  // ═══════════════════════════════════════
+  // =======================================
   const SYNTH_SOUNDS = ['sawtooth', 'square', 'triangle', 'sine'];
   let soundTab = 'samples';
   let soundSearchQuery = '';
@@ -448,9 +419,7 @@ note("c3 [e3 g3] a3 <f3 d3>")
       synths: {},
     };
 
-    // Separate drum machine sounds from regular samples
     for (const [name, count] of Object.entries(sounds)) {
-      // Drum machine sounds have format "MachineName_type"
       if (name.includes('_') && /^[A-Z]/.test(name)) {
         const bank = name.split('_')[0];
         if (!categories['drum-machines'][bank]) categories['drum-machines'][bank] = [];
@@ -460,9 +429,7 @@ note("c3 [e3 g3] a3 <f3 d3>")
       }
     }
 
-    // Add built-in synths
     SYNTH_SOUNDS.forEach(s => { categories.synths[s] = 1; });
-
     return categories;
   }
 
@@ -485,7 +452,7 @@ note("c3 [e3 g3] a3 <f3 d3>")
         .sort((a, b) => a[0].localeCompare(b[0]));
 
       if (!items.length) {
-        list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-dim)">No samples loaded yet.<br>Press Play first to load sounds.</div>';
+        list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-dim)">No samples loaded yet.<br>Press play first to load sounds.</div>';
         return;
       }
 
@@ -536,9 +503,9 @@ note("c3 [e3 g3] a3 <f3 d3>")
     UI.closePanel('soundsPanel');
   };
 
-  // ═══════════════════════════════════════
+  // =======================================
   //  RENAME DIALOG
-  // ═══════════════════════════════════════
+  // =======================================
   $('projectNameLabel').onclick = () => {
     $('renameInput').value = currentProject ? currentProject.name : ($('projectNameLabel').textContent || 'untitled');
     UI.showDialog('renameDialog');
@@ -568,10 +535,10 @@ note("c3 [e3 g3] a3 <f3 d3>")
     if (e.key === 'Escape') window.App.hideSaveAs();
   };
 
-  // ═══════════════════════════════════════
+  // =======================================
   //  AUTH
-  // ═══════════════════════════════════════
-  let authMode = 'login'; // 'login' or 'register'
+  // =======================================
+  let authMode = 'login';
 
   function updateUserUI() {
     const user = Auth.currentUser();
@@ -588,12 +555,11 @@ note("c3 [e3 g3] a3 <f3 d3>")
 
   $('userBtn').onclick = () => {
     if (Auth.isLoggedIn()) {
-      // Show logout option
       if (confirm('Sign out of ' + Auth.currentUser().username + '?')) {
         Auth.logout();
         currentProject = null;
         editor.value = DEFAULT_CODE;
-        cpsInput.value = '1';
+        currentCps = 1;
         $('projectNameLabel').textContent = 'untitled';
         editor.dispatchEvent(new Event('input'));
         renderProjectList();
@@ -629,19 +595,17 @@ note("c3 [e3 g3] a3 <f3 d3>")
     if (result.ok) {
       UI.hideDialog('authDialog');
       updateUserUI();
-      // Reload projects for this user
       currentProject = null;
       const userProjects = Projects.getAll();
       if (userProjects.length > 0) {
-        // Load the most recent project
         const latest = userProjects[0];
         editor.value = latest.code || '';
-        cpsInput.value = latest.cps || '1';
+        currentCps = latest.cps || 1;
         currentProject = latest;
         $('projectNameLabel').textContent = latest.name;
       } else {
         editor.value = DEFAULT_CODE;
-        cpsInput.value = '1';
+        currentCps = 1;
         $('projectNameLabel').textContent = 'untitled';
       }
       editor.dispatchEvent(new Event('input'));
@@ -659,9 +623,9 @@ note("c3 [e3 g3] a3 <f3 d3>")
     if (e.key === 'Escape') UI.hideDialog('authDialog');
   };
 
-  // ═══════════════════════════════════════
+  // =======================================
   //  FONT SIZE
-  // ═══════════════════════════════════════
+  // =======================================
   window.App.adjustFont = function (delta) {
     fontSize = Math.max(10, Math.min(24, fontSize + delta));
     editor.style.fontSize = fontSize + 'px';
@@ -671,18 +635,13 @@ note("c3 [e3 g3] a3 <f3 d3>")
     Storage.set('strudel_fs', fontSize);
   };
 
-  // ═══════════════════════════════════════
-  //  CONSOLE
-  // ═══════════════════════════════════════
-  window.App.clearConsole = UI.clearConsole;
-
-  // ═══════════════════════════════════════
+  // =======================================
   //  SESSION PERSISTENCE
-  // ═══════════════════════════════════════
+  // =======================================
   function saveSession() {
     Storage.set('strudel_session', {
       code: editor.value,
-      cps: cpsInput.value,
+      cps: currentCps,
       fs: fontSize,
       pid: currentProject ? currentProject.id : null,
       pn: $('projectNameLabel').textContent
@@ -693,7 +652,7 @@ note("c3 [e3 g3] a3 <f3 d3>")
     const s = Storage.get('strudel_session');
     if (!s) return false;
     if (s.code) editor.value = s.code;
-    if (s.cps) cpsInput.value = s.cps;
+    if (s.cps) currentCps = s.cps;
     if (s.fs) { fontSize = s.fs; window.App.adjustFont(0); }
     if (s.pid) {
       const p = Projects.find(s.pid);
@@ -703,54 +662,37 @@ note("c3 [e3 g3] a3 <f3 d3>")
     return !!s.code;
   }
 
-  // ═══════════════════════════════════════
+  // =======================================
   //  INIT
-  // ═══════════════════════════════════════
+  // =======================================
   (function init() {
-    // Restore user session
     updateUserUI();
 
-    // Restore font size
     const savedFs = Storage.get('strudel_fs');
     if (savedFs) { fontSize = savedFs; window.App.adjustFont(0); }
 
-    // Load session or default
     if (!loadSession()) editor.value = DEFAULT_CODE;
     editor.dispatchEvent(new Event('input'));
-
-    // Init beat bar
-    UI.initBeatBar();
 
     // Auto-save every 4 seconds
     setInterval(saveSession, 4000);
 
-    // Intercept console
-    const origError = console.error;
-    console.error = function (...args) {
-      UI.addLog(args.join(' '), 'err');
-      origError.apply(console, args);
-    };
-
     // Boot engine
-    UI.addLog('Starting Strudel engine...', 'info');
     Engine.boot(msg => {
       $('loadingMessage').textContent = msg;
-      UI.addLog(msg, 'info');
     }).then(() => {
       UI.setStatus('ok', 'Ready');
-      $('samplesStatus').textContent = '✓ loaded';
+      $('samplesStatus').textContent = 'loaded';
       const ctx = Engine.audioContext;
-      $('audioStatus').textContent = ctx ? ctx.state : '—';
+      $('audioStatus').textContent = ctx ? ctx.state : '--';
       $('loadingScreen').classList.add('bye');
       setTimeout(() => $('loadingScreen').style.display = 'none', 500);
-      UI.toast('Engine ready — press Play!', 'success');
-      UI.addLog('Engine ready. Samples loaded.', 'ok');
+      UI.toast('Engine ready — press play!', 'success');
     }).catch(e => {
       UI.setStatus('err', 'Engine error');
       $('loadingMessage').textContent = 'Error: ' + e.message;
-      $('samplesStatus').textContent = '✗';
+      $('samplesStatus').textContent = 'error';
       $('audioStatus').textContent = 'error';
-      UI.addLog('BOOT ERROR: ' + e.message, 'err');
       setTimeout(() => {
         $('loadingScreen').classList.add('bye');
         setTimeout(() => $('loadingScreen').style.display = 'none', 500);
