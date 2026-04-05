@@ -5,8 +5,6 @@
   'use strict';
 
   const $ = UI.$;
-
-  // Ensure App namespace exists early
   window.App = window.App || {};
 
   // --- State ---
@@ -15,10 +13,11 @@
   let currentCps = 1;
 
   // --- DOM refs ---
-  const editor = $('editor');
-  const hlLayer = $('highlightLayer');
-  const lineNums = $('lineNumbers');
-  const playBtn = $('playBtn');
+  const editor       = $('editor');
+  const hlLayer      = $('highlightLayer');
+  const lineNums     = $('lineNumbers');
+  const playBtn      = $('playBtn');
+  const activeLineHL = $('activeLineHL');
 
   const DEFAULT_CODE = `// strudel REPL
 // Press play to start!
@@ -29,7 +28,7 @@ note("c3 [e3 g3] a3 <f3 d3>")
   .slow(2)`;
 
   // =======================================
-  //  EDITOR — sync highlight + scroll
+  //  EDITOR — highlight, line numbers, scroll
   // =======================================
   function syncHighlight() {
     hlLayer.innerHTML = Highlight.highlight(editor.value) + '\n';
@@ -45,14 +44,15 @@ note("c3 [e3 g3] a3 <f3 d3>")
     lineNums.innerHTML = html;
   }
 
-  editor.addEventListener('scroll', () => {
+  function syncScroll() {
     hlLayer.scrollTop = editor.scrollTop;
     hlLayer.scrollLeft = editor.scrollLeft;
     lineNums.style.transform = 'translateY(-' + editor.scrollTop + 'px)';
-  });
-  editor.addEventListener('input', () => {
-    syncHighlight();
-  });
+    updateActiveLinePosition();
+  }
+
+  editor.addEventListener('scroll', syncScroll);
+  editor.addEventListener('input', syncHighlight);
 
   // Tab key inserts 2 spaces
   editor.addEventListener('keydown', e => {
@@ -66,35 +66,39 @@ note("c3 [e3 g3] a3 <f3 d3>")
     }
   });
 
+  // --- Active line highlight ---
+  function updateActiveLinePosition() {
+    if (!activeLineHL) return;
+    const pos = editor.selectionStart;
+    const textBefore = editor.value.substring(0, pos);
+    const lineIndex = textBefore.split('\n').length - 1;
+    const lineH = parseFloat(getComputedStyle(editor).lineHeight) || (fontSize * 1.7);
+    const paddingTop = parseFloat(getComputedStyle(editor).paddingTop) || 12;
+    const top = paddingTop + lineIndex * lineH - editor.scrollTop;
+    activeLineHL.style.top = top + 'px';
+    activeLineHL.style.height = lineH + 'px';
+    activeLineHL.style.display = (top < -lineH || top > editor.clientHeight) ? 'none' : '';
+  }
+
+  editor.addEventListener('click', updateActiveLinePosition);
+  editor.addEventListener('keyup', updateActiveLinePosition);
+  editor.addEventListener('focus', updateActiveLinePosition);
+
   // =======================================
   //  TRANSPORT CONTROLS
   // =======================================
-  function getCps() {
-    return currentCps || 1;
-  }
+  function getCps() { return currentCps || 1; }
 
   async function doPlay() {
-    if (!Engine.ready) {
-      UI.toast('Engine still loading...', 'info');
-      return;
-    }
+    if (!Engine.ready) { UI.toast('Engine still loading...', 'info'); return; }
 
-    // Toggle off
     if (Engine.playing) {
-      Engine.stop();
-      Engine.playing = false;
-      playBtn.classList.remove('active');
-      playBtn.textContent = 'play';
-      UI.setStatus('ok', 'Stopped');
-      UI.stopBeatAnimation();
+      doHush();
       return;
     }
 
     const code = editor.value.trim();
-    if (!code) {
-      UI.toast('Write some code first!', 'info');
-      return;
-    }
+    if (!code) { UI.toast('Write some code first!', 'info'); return; }
 
     try {
       await Engine.evalCode(code, getCps());
@@ -110,11 +114,7 @@ note("c3 [e3 g3] a3 <f3 d3>")
   }
 
   async function doEval() {
-    if (!Engine.ready) {
-      UI.toast('Engine still loading...', 'info');
-      return;
-    }
-
+    if (!Engine.ready) { UI.toast('Engine still loading...', 'info'); return; }
     const code = editor.value.trim();
     if (!code) return;
 
@@ -137,7 +137,7 @@ note("c3 [e3 g3] a3 <f3 d3>")
     Engine.playing = false;
     playBtn.classList.remove('active');
     playBtn.textContent = 'play';
-    UI.setStatus('ok', 'Hushed');
+    UI.setStatus('ok', 'Stopped');
     UI.stopBeatAnimation();
   }
 
@@ -149,7 +149,11 @@ note("c3 [e3 g3] a3 <f3 d3>")
   //  KEYBOARD SHORTCUTS
   // =======================================
   document.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); doEval(); }
+    // Ctrl+Enter — toggle play / stop
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      doPlay();
+    }
     if ((e.ctrlKey || e.metaKey) && e.key === '.') { e.preventDefault(); doHush(); }
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveProject(); }
   });
@@ -165,7 +169,6 @@ note("c3 [e3 g3] a3 <f3 d3>")
       const after = editor.value.substring(editor.selectionEnd);
       editor.value = before + sn + after;
 
-      // Smart cursor placement
       let cur = sn.length;
       const dq = sn.indexOf('""');
       const sq = sn.indexOf("''");
@@ -186,27 +189,27 @@ note("c3 [e3 g3] a3 <f3 d3>")
   // =======================================
   //  PANEL BUTTONS
   // =======================================
-  $('btnProjects').onclick = () => { renderProjectList(); UI.openPanel('projectsPanel'); };
-  $('btnExamples').onclick = () => { renderExamples(); UI.openPanel('examplesPanel'); };
-  $('btnSettings').onclick = () => UI.openPanel('settingsPanel');
-  $('btnSnippets').onclick = () => UI.openPanel('snippetsPanel');
+  $('btnProjects').onclick  = () => { renderProjectList(); UI.openPanel('projectsPanel'); };
+  $('btnExamples').onclick  = () => { renderExamples(); UI.openPanel('examplesPanel'); };
+  $('btnSettings').onclick  = () => UI.openPanel('settingsPanel');
+  $('btnSnippets').onclick  = () => UI.openPanel('snippetsPanel');
 
   // =======================================
-  //  PROJECTS
+  //  PROJECTS (async — server-backed)
   // =======================================
-  function saveProject() {
+  async function saveProject() {
+    if (!Auth.isLoggedIn()) {
+      UI.toast('Sign in to save projects', 'info');
+      return;
+    }
     const code = editor.value;
     const cps = getCps();
 
     if (currentProject) {
-      currentProject = Projects.save({
-        id: currentProject.id,
-        name: currentProject.name,
-        code,
-        cps
-      });
+      const saved = await Projects.save({ id: currentProject.id, name: currentProject.name, code, cps });
+      if (saved) { currentProject = saved; UI.toast('Project saved', 'success'); }
+      else UI.toast('Save failed', 'error');
       renderProjectList();
-      UI.toast('Project saved', 'success');
     } else {
       showSaveAsDialog(code, cps);
     }
@@ -221,17 +224,21 @@ note("c3 [e3 g3] a3 <f3 d3>")
   }
 
   window.App.hideSaveAs = function () { UI.hideDialog('saveAsDialog'); };
-  window.App.doSaveAs = function () {
+  window.App.doSaveAs = async function () {
     const name = $('saveAsInput').value.trim() || 'untitled';
     const pending = window._pendingSave;
     if (!pending) return;
-
-    currentProject = Projects.save({ name: name, code: pending.code, cps: pending.cps });
-    $('projectNameLabel').textContent = currentProject.name;
+    const saved = await Projects.save({ name, code: pending.code, cps: pending.cps });
+    if (saved) {
+      currentProject = saved;
+      $('projectNameLabel').textContent = saved.name;
+      UI.toast('Project saved', 'success');
+    } else {
+      UI.toast('Save failed', 'error');
+    }
     window._pendingSave = null;
     UI.hideDialog('saveAsDialog');
     renderProjectList();
-    UI.toast('Project saved', 'success');
   };
 
   function newProject() {
@@ -259,10 +266,10 @@ note("c3 [e3 g3] a3 <f3 d3>")
     UI.toast('Loaded: ' + p.name, 'success');
   }
 
-  function deleteProject(id, ev) {
+  async function deleteProject(id, ev) {
     ev.stopPropagation();
     if (!confirm('Delete this project?')) return;
-    Projects.remove(id);
+    await Projects.remove(id);
     if (currentProject && currentProject.id === id) {
       currentProject = null;
       $('projectNameLabel').textContent = 'untitled';
@@ -281,9 +288,10 @@ note("c3 [e3 g3] a3 <f3 d3>")
     }
 
     el.innerHTML = projects.map(p => {
-      const date = new Date(p.modified).toLocaleDateString('en-US', {
+      const mod = p.modified_at || p.modified || p.created_at;
+      const date = mod ? new Date(mod).toLocaleDateString('en-US', {
         month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-      });
+      }) : '';
       const preview = (p.code || '').split('\n').find(l => l.trim() && !l.trim().startsWith('//')) || '';
       const isCurrent = currentProject && currentProject.id === p.id;
 
@@ -306,14 +314,7 @@ note("c3 [e3 g3] a3 <f3 d3>")
   // =======================================
   function exportCurrent() {
     const name = currentProject ? currentProject.name : 'untitled';
-    Projects.download(
-      Projects.exportProject({
-        name,
-        code: editor.value,
-        cps: getCps()
-      }),
-      name + '.strudel.json'
-    );
+    Projects.download(Projects.exportProject({ name, code: editor.value, cps: getCps() }), name + '.strudel.json');
     UI.toast('Exported', 'success');
   }
 
@@ -324,18 +325,18 @@ note("c3 [e3 g3] a3 <f3 d3>")
     UI.toast('Exported ' + all.length + ' projects', 'success');
   }
 
-  $('fileInput').onchange = function (e) {
+  $('fileInput').onchange = async function (e) {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = function () {
+    reader.onload = async function () {
       try {
         const data = JSON.parse(reader.result);
-        const result = Projects.importData(data);
+        const result = await Projects.importData(data);
         if (result.type === 'bundle') {
           renderProjectList();
           UI.toast('Imported ' + result.count + ' projects', 'success');
-        } else if (result.type === 'single') {
+        } else if (result.type === 'single' && result.project) {
           currentProject = result.project;
           editor.value = result.project.code || '';
           currentCps = result.project.cps || 1;
@@ -352,10 +353,10 @@ note("c3 [e3 g3] a3 <f3 d3>")
     e.target.value = '';
   };
 
-  window.App.saveProject = saveProject;
-  window.App.newProject = newProject;
+  window.App.saveProject  = saveProject;
+  window.App.newProject   = newProject;
   window.App.exportCurrent = exportCurrent;
-  window.App.exportAll = exportAllProjects;
+  window.App.exportAll    = exportAllProjects;
   window.App.triggerImport = () => $('fileInput').click();
 
   // =======================================
@@ -378,10 +379,7 @@ note("c3 [e3 g3] a3 <f3 d3>")
     ).join('');
   }
 
-  window.App.setExampleTab = function (tab) {
-    exampleTab = tab;
-    renderExamples();
-  };
+  window.App.setExampleTab = function (tab) { exampleTab = tab; renderExamples(); };
 
   window.App.loadExample = function (cat, idx) {
     const ex = Examples[cat][idx];
@@ -405,20 +403,11 @@ note("c3 [e3 g3] a3 <f3 d3>")
   let soundSearchQuery = '';
 
   $('btnSounds').onclick = () => { renderSounds(); UI.openPanel('soundsPanel'); };
-
-  $('soundSearch').oninput = function () {
-    soundSearchQuery = this.value.toLowerCase().trim();
-    renderSoundList();
-  };
+  $('soundSearch').oninput = function () { soundSearchQuery = this.value.toLowerCase().trim(); renderSoundList(); };
 
   function getSoundCategories() {
     const sounds = Engine.sounds || {};
-    const categories = {
-      samples: {},
-      'drum-machines': {},
-      synths: {},
-    };
-
+    const categories = { samples: {}, 'drum-machines': {}, synths: {} };
     for (const [name, count] of Object.entries(sounds)) {
       if (name.includes('_') && /^[A-Z]/.test(name)) {
         const bank = name.split('_')[0];
@@ -428,7 +417,6 @@ note("c3 [e3 g3] a3 <f3 d3>")
         categories.samples[name] = count;
       }
     }
-
     SYNTH_SOUNDS.forEach(s => { categories.synths[s] = 1; });
     return categories;
   }
@@ -447,53 +435,20 @@ note("c3 [e3 g3] a3 <f3 d3>")
     const q = soundSearchQuery;
 
     if (soundTab === 'samples') {
-      const items = Object.entries(categories.samples)
-        .filter(([name]) => !q || name.toLowerCase().includes(q))
-        .sort((a, b) => a[0].localeCompare(b[0]));
-
-      if (!items.length) {
-        list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-dim)">No samples loaded yet.<br>Press play first to load sounds.</div>';
-        return;
-      }
-
-      list.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:2px 6px">' +
-        items.map(([name, count]) =>
-          '<span class="sound-item" onclick="App.insertSound(\'' + name + '\')" title="' + count + ' sample(s)">' +
-          name + '<span style="color:var(--text-faint)">(' + count + ')</span></span>'
-        ).join(' ') + '</div>';
+      const items = Object.entries(categories.samples).filter(([n]) => !q || n.toLowerCase().includes(q)).sort((a,b) => a[0].localeCompare(b[0]));
+      if (!items.length) { list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-dim)">No samples loaded yet.<br>Press play first.</div>'; return; }
+      list.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:2px 6px">' + items.map(([n,c]) => '<span class="sound-item" onclick="App.insertSound(\'' + n + '\')" title="' + c + '">' + n + '<span style="color:var(--text-faint)">(' + c + ')</span></span>').join(' ') + '</div>';
     } else if (soundTab === 'drum-machines') {
-      const banks = Object.entries(categories['drum-machines'])
-        .filter(([bank]) => !q || bank.toLowerCase().includes(q))
-        .sort((a, b) => a[0].localeCompare(b[0]));
-
-      if (!banks.length) {
-        list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-dim)">No drum machines loaded yet.</div>';
-        return;
-      }
-
-      list.innerHTML = banks.map(([bank, sounds]) =>
-        '<div style="margin-bottom:8px"><span style="color:var(--blue);font-weight:600">' + bank + '</span>' +
-        '<span style="color:var(--text-faint)"> (' + sounds.length + ')</span>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:2px 6px;margin-top:2px">' +
-        sounds.map(s =>
-          '<span class="sound-item" onclick="App.insertSound(\'' + s.name + '\')">' +
-          s.name.split('_').slice(1).join('_') + '</span>'
-        ).join(' ') + '</div></div>'
-      ).join('');
-    } else if (soundTab === 'synths') {
+      const banks = Object.entries(categories['drum-machines']).filter(([b]) => !q || b.toLowerCase().includes(q)).sort((a,b) => a[0].localeCompare(b[0]));
+      if (!banks.length) { list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-dim)">No drum machines loaded yet.</div>'; return; }
+      list.innerHTML = banks.map(([bank, sounds]) => '<div style="margin-bottom:8px"><span style="color:var(--blue);font-weight:600">' + bank + '</span><span style="color:var(--text-faint)"> (' + sounds.length + ')</span><div style="display:flex;flex-wrap:wrap;gap:2px 6px;margin-top:2px">' + sounds.map(s => '<span class="sound-item" onclick="App.insertSound(\'' + s.name + '\')">' + s.name.split('_').slice(1).join('_') + '</span>').join(' ') + '</div></div>').join('');
+    } else {
       const items = SYNTH_SOUNDS.filter(s => !q || s.includes(q));
-      list.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:2px 6px">' +
-        items.map(name =>
-          '<span class="sound-item" onclick="App.insertSound(\'' + name + '\')">' + name + '</span>'
-        ).join(' ') + '</div>';
+      list.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:2px 6px">' + items.map(n => '<span class="sound-item" onclick="App.insertSound(\'' + n + '\')">' + n + '</span>').join(' ') + '</div>';
     }
   }
 
-  window.App.setSoundTab = function (tab) {
-    soundTab = tab;
-    renderSounds();
-  };
-
+  window.App.setSoundTab = function (tab) { soundTab = tab; renderSounds(); };
   window.App.insertSound = function (name) {
     const pos = editor.selectionStart;
     editor.value = editor.value.substring(0, pos) + name + editor.value.substring(editor.selectionEnd);
@@ -513,30 +468,23 @@ note("c3 [e3 g3] a3 <f3 d3>")
   };
 
   window.App.hideRename = function () { UI.hideDialog('renameDialog'); };
-  window.App.doRename = function () {
+  window.App.doRename = async function () {
     const name = $('renameInput').value.trim() || 'untitled';
     $('projectNameLabel').textContent = name;
     if (currentProject) {
-      Projects.rename(currentProject.id, name);
+      await Projects.rename(currentProject.id, name);
       currentProject.name = name;
     }
     UI.hideDialog('renameDialog');
   };
 
   $('renameDialog').onclick = e => { if (e.target === $('renameDialog')) UI.hideDialog('renameDialog'); };
-  $('renameInput').onkeydown = e => {
-    if (e.key === 'Enter') window.App.doRename();
-    if (e.key === 'Escape') window.App.hideRename();
-  };
-
+  $('renameInput').onkeydown = e => { if (e.key === 'Enter') window.App.doRename(); if (e.key === 'Escape') window.App.hideRename(); };
   $('saveAsDialog').onclick = e => { if (e.target === $('saveAsDialog')) window.App.hideSaveAs(); };
-  $('saveAsInput').onkeydown = e => {
-    if (e.key === 'Enter') window.App.doSaveAs();
-    if (e.key === 'Escape') window.App.hideSaveAs();
-  };
+  $('saveAsInput').onkeydown = e => { if (e.key === 'Enter') window.App.doSaveAs(); if (e.key === 'Escape') window.App.hideSaveAs(); };
 
   // =======================================
-  //  AUTH
+  //  AUTH (async)
   // =======================================
   let authMode = 'login';
 
@@ -544,19 +492,15 @@ note("c3 [e3 g3] a3 <f3 d3>")
     const user = Auth.currentUser();
     const btn = $('userBtn');
     const label = $('userLabel');
-    if (user) {
-      label.textContent = user.username;
-      btn.classList.add('logged-in');
-    } else {
-      label.textContent = 'Sign in';
-      btn.classList.remove('logged-in');
-    }
+    if (user) { label.textContent = user.username; btn.classList.add('logged-in'); }
+    else { label.textContent = 'Sign in'; btn.classList.remove('logged-in'); }
   }
 
-  $('userBtn').onclick = () => {
+  $('userBtn').onclick = async () => {
     if (Auth.isLoggedIn()) {
       if (confirm('Sign out of ' + Auth.currentUser().username + '?')) {
         Auth.logout();
+        Projects.clearCache();
         currentProject = null;
         editor.value = DEFAULT_CODE;
         currentCps = 1;
@@ -587,14 +531,17 @@ note("c3 [e3 g3] a3 <f3 d3>")
     $('authError').textContent = '';
   };
 
-  window.App.doAuth = function () {
+  window.App.doAuth = async function () {
     const username = $('authUsername').value.trim();
     const password = $('authPassword').value;
-    const result = authMode === 'login' ? Auth.login(username, password) : Auth.register(username, password);
+    const result = await (authMode === 'login' ? Auth.login(username, password) : Auth.register(username, password));
 
     if (result.ok) {
       UI.hideDialog('authDialog');
       updateUserUI();
+
+      // Sync projects from server
+      await Projects.sync();
       currentProject = null;
       const userProjects = Projects.getAll();
       if (userProjects.length > 0) {
@@ -618,10 +565,7 @@ note("c3 [e3 g3] a3 <f3 d3>")
 
   $('authDialog').onclick = e => { if (e.target === $('authDialog')) UI.hideDialog('authDialog'); };
   $('authUsername').onkeydown = e => { if (e.key === 'Enter') $('authPassword').focus(); };
-  $('authPassword').onkeydown = e => {
-    if (e.key === 'Enter') window.App.doAuth();
-    if (e.key === 'Escape') UI.hideDialog('authDialog');
-  };
+  $('authPassword').onkeydown = e => { if (e.key === 'Enter') window.App.doAuth(); if (e.key === 'Escape') UI.hideDialog('authDialog'); };
 
   // =======================================
   //  FONT SIZE
@@ -633,10 +577,11 @@ note("c3 [e3 g3] a3 <f3 d3>")
     lineNums.style.fontSize = fontSize + 'px';
     $('fontSizeValue').textContent = fontSize;
     Storage.set('strudel_fs', fontSize);
+    updateActiveLinePosition();
   };
 
   // =======================================
-  //  SESSION PERSISTENCE
+  //  SESSION PERSISTENCE (local — code/font only)
   // =======================================
   function saveSession() {
     Storage.set('strudel_session', {
@@ -654,18 +599,14 @@ note("c3 [e3 g3] a3 <f3 d3>")
     if (s.code) editor.value = s.code;
     if (s.cps) currentCps = s.cps;
     if (s.fs) { fontSize = s.fs; window.App.adjustFont(0); }
-    if (s.pid) {
-      const p = Projects.find(s.pid);
-      if (p) { currentProject = p; $('projectNameLabel').textContent = p.name; }
-      else if (s.pn) $('projectNameLabel').textContent = s.pn;
-    }
+    if (s.pn) $('projectNameLabel').textContent = s.pn;
     return !!s.code;
   }
 
   // =======================================
   //  INIT
   // =======================================
-  (function init() {
+  (async function init() {
     updateUserUI();
 
     const savedFs = Storage.get('strudel_fs');
@@ -673,31 +614,38 @@ note("c3 [e3 g3] a3 <f3 d3>")
 
     if (!loadSession()) editor.value = DEFAULT_CODE;
     editor.dispatchEvent(new Event('input'));
+    updateActiveLinePosition();
 
-    // Auto-save every 4 seconds
+    // If user is logged in, sync projects from server and restore current
+    if (Auth.isLoggedIn()) {
+      await Projects.sync();
+      const s = Storage.get('strudel_session');
+      if (s && s.pid) {
+        const p = Projects.find(s.pid);
+        if (p) { currentProject = p; $('projectNameLabel').textContent = p.name; }
+      }
+    }
+
     setInterval(saveSession, 4000);
 
     // Boot engine
-    Engine.boot(msg => {
-      $('loadingMessage').textContent = msg;
-    }).then(() => {
-      UI.setStatus('ok', 'Ready');
-      $('samplesStatus').textContent = 'loaded';
-      const ctx = Engine.audioContext;
-      $('audioStatus').textContent = ctx ? ctx.state : '--';
-      $('loadingScreen').classList.add('bye');
-      setTimeout(() => $('loadingScreen').style.display = 'none', 500);
-      UI.toast('Engine ready — press play!', 'success');
-    }).catch(e => {
-      UI.setStatus('err', 'Engine error');
-      $('loadingMessage').textContent = 'Error: ' + e.message;
-      $('samplesStatus').textContent = 'error';
-      $('audioStatus').textContent = 'error';
-      setTimeout(() => {
+    Engine.boot(msg => { $('loadingMessage').textContent = msg; })
+      .then(() => {
+        UI.setStatus('ok', 'Ready');
+        $('samplesStatus').textContent = 'loaded';
+        const ctx = Engine.audioContext;
+        $('audioStatus').textContent = ctx ? ctx.state : '--';
         $('loadingScreen').classList.add('bye');
         setTimeout(() => $('loadingScreen').style.display = 'none', 500);
-      }, 2500);
-      UI.toast('Engine error: ' + e.message, 'error');
-    });
+        UI.toast('Engine ready — press play!', 'success');
+      })
+      .catch(e => {
+        UI.setStatus('err', 'Engine error');
+        $('loadingMessage').textContent = 'Error: ' + e.message;
+        $('samplesStatus').textContent = 'error';
+        $('audioStatus').textContent = 'error';
+        setTimeout(() => { $('loadingScreen').classList.add('bye'); setTimeout(() => $('loadingScreen').style.display = 'none', 500); }, 2500);
+        UI.toast('Engine error: ' + e.message, 'error');
+      });
   })();
 })();

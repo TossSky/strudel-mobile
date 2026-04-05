@@ -1,0 +1,4 @@
+node_modules/
+strudel.db
+strudel.db-wal
+strudel.db-shm

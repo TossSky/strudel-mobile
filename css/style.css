@@ -3,12 +3,13 @@
    ============================================ */
 
 :root {
-  --bg-deep: #131313;
-  --bg: #1a1a1a;
-  --bg-surface: #222222;
-  --bg-raised: #2a2a2a;
-  --bg-input: #171717;
-  --bg-hover: #333333;
+  --bg-deep: #0e0e0e;
+  --bg: #151515;
+  --bg-surface: #1c1c1c;
+  --bg-raised: #242424;
+  --bg-input: #111111;
+  --bg-hover: #2a2a2a;
+  --bg-active-line: #1a1a2e;
 
   --border: #333333;
   --border-focus: #555555;
@@ -249,7 +250,6 @@ html, body {
   position: absolute;
   left: 0;
   top: 0;
-  bottom: 0;
   width: 36px;
   padding-top: 12px;
   background: var(--bg-deep);
@@ -259,7 +259,6 @@ html, body {
   line-height: 1.7;
   text-align: right;
   padding-right: 8px;
-  overflow: hidden;
   z-index: 3;
   pointer-events: none;
   user-select: none;
@@ -325,8 +324,19 @@ html, body {
 .hl-paren { color: var(--text); }
 .hl-label { color: #e0e0e0; font-weight: 700; }
 
+/* Active cursor line highlight */
+.active-line-highlight {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1.7em;
+  background: var(--bg-active-line);
+  pointer-events: none;
+  z-index: 0;
+  transition: top 0.05s;
+}
+
 /* Active note highlight rectangles */
-.hl-active-line { display: none; }
 .hap-highlights {
   position: absolute;
   top: 0;
