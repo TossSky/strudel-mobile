@@ -3,13 +3,13 @@
    ============================================ */
 
 :root {
-  --bg-deep: #0e0e0e;
-  --bg: #151515;
-  --bg-surface: #1c1c1c;
-  --bg-raised: #242424;
-  --bg-input: #111111;
-  --bg-hover: #2a2a2a;
-  --bg-active-line: #1a1a2e;
+  --bg-deep: #222222;
+  --bg: #1a1a1a;
+  --bg-surface: #2a2a2a;
+  --bg-raised: #303030;
+  --bg-input: #1e1e1e;
+  --bg-hover: #383838;
+  --bg-active-line: #171717;
 
   --border: #333333;
   --border-focus: #555555;
